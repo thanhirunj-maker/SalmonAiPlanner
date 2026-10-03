@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แซลม่อน AI - ระบบวางแผนสอบอัจฉริยะ (KU Edition)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        salmon: {
+                            50: '#fff5f2',
+                            100: '#ffe8e1',
+                            200: '#ffd4c7',
+                            300: '#ffb39e',
+                            400: '#ff866a',
+                            500: '#ff5733',
+                            600: '#ed3b15',
+                            700: '#c82d0e',
+                            800: '#a52912',
+                            900: '#882716',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans Thai', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts for Multi-Language Support -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Marked.js for Markdown Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- html2canvas for Exporting Planner as Image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- QRCode Generator Library for Universal Offline/Client-side QR Code Rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(241, 245, 249, 0.6);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Markdown Table Styling for Chat view */
+        .prose table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 0.75rem;
+            margin-bottom: 0.75rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .prose th {
+            background-color: #ff5733;
+            color: #ffffff;
+            font-weight: 600;
+            text-align: left;
+            padding: 0.65rem 0.85rem;
+            font-size: 0.825rem;
+        }
+        .prose td {
+            padding: 0.65rem 0.85rem;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.825rem;
+            color: #334155;
+            background-color: #ffffff;
+        }
+        .prose tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+        .prose tr:hover td {
+            background-color: #fff5f2;
+        }
+
+        /* Clean Visual Planner Card Table Styles */
+        #printablePlanner table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #ffffff;
+        }
+        #printablePlanner th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        #printablePlanner td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.825rem;
+            color: #1e293b;
+            vertical-align: middle;
+            line-height: 1.5;
+        }
+        #printablePlanner tr:last-child td {
+            border-bottom: none;
+        }
+        #printablePlanner tr:nth-child(even) td {
+            background-color: #fdfdfd;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printablePlanner, #printablePlanner * {
+                visibility: visible;
+            }
+            #printablePlanner {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 h-full flex flex-col overflow-hidden antialiased">
+
+    <!-- Main Top Navigation Bar -->
+    <header class="h-14 bg-white border-b border-slate-200 px-4 flex items-center justify-between shrink-0 shadow-sm z-20">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-salmon-500 transition p-1.5 rounded-lg hover:bg-slate-100" title="เปิดเมนู">
+                <i class="fa-solid fa-bars text-lg"></i>
+            </button>
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-salmon-500 to-orange-400 flex items-center justify-center text-white shadow-md shadow-salmon-500/20">
+                <i class="fa-solid fa-fish text-sm"></i>
+            </div>
+            <span class="font-bold text-slate-800 text-sm md:text-base tracking-tight" data-i18n="app_name">แซลม่อน AI Planner</span>
+            <span id="selectedFacultyBadge" class="hidden sm:inline-flex items-center text-[11px] bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded-full font-medium">
+                <span data-i18n="ku_edition">คณะ: ทั่วไป</span>
+            </span>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- User Guide Button -->
+            <button onclick="openUserGuideModal()" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-medium transition flex items-center gap-1.5 border border-amber-200 shadow-sm">
+                <i class="fa-solid fa-circle-question text-amber-500"></i>
+                <span class="hidden sm:inline" data-i18n="user_guide_btn">วิธีใช้งาน</span>
+            </button>
+
+            <!-- Share Website / QR Link Button -->
+            <button onclick="openShareModal()" class="px-2.5 py-1.5 bg-salmon-50 hover:bg-salmon-100 text-salmon-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 border border-salmon-200 shadow-sm">
+                <i class="fa-solid fa-share-nodes text-salmon-500"></i>
+                <span class="hidden sm:inline">แชร์เว็บ / ลิงก์</span>
+            </button>
+
+            <!-- Multi-AI / External Hub Button -->
+            <button onclick="openExternalHubModal()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium transition flex items-center gap-1.5 border border-slate-200">
+                <i class="fa-solid fa-network-wired text-salmon-500"></i>
+                <span class="hidden sm:inline" data-i18n="multi_ai_hub">นำเข้า/Multi-AI</span>
+            </button>
+
+            <!-- Quick Planner Button -->
+            <button onclick="openQuickPlannerModal()" class="px-3 py-1.5 bg-salmon-500 hover:bg-salmon-600 text-white rounded-xl text-xs font-medium shadow-sm transition flex items-center gap-1.5">
+                <i class="fa-solid fa-calendar-plus"></i>
+                <span data-i18n="quick_plan_btn">จัดตารางด่วน</span>
+            </button>
+
+            <!-- Google Sign-In / User Profile Navigation Container -->
+            <div id="authHeaderContainer" class="flex items-center gap-2">
+                <!-- Logged Out State Button -->
+                <button id="googleSignInBtn" onclick="loginWithGoogle()" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                    <span class="hidden sm:inline">เข้าสู่ระบบด้วย Google</span>
+                </button>
+
+                <!-- Logged In State User Profile Card -->
+                <div id="userProfileHeader" class="hidden items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-1 pr-2.5">
+                    <img id="userAvatar" src="https://placehold.co/100x100/ff5733/ffffff?text=U" class="w-7 h-7 rounded-lg object-cover border border-salmon-300">
+                    <span id="userName" class="text-xs font-semibold text-slate-700 max-w-[100px] truncate">ผู้ใช้งาน</span>
+                    <button onclick="logoutGoogle()" class="text-slate-400 hover:text-salmon-600 p-1 rounded-md transition" title="ออกจากระบบ">
+                        <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Language Switcher Dropdown -->
+            <div class="relative ml-1">
+                <select onchange="switchLanguage(this.value)" class="bg-slate-100 border border-slate-200 text-slate-700 text-xs rounded-xl px-2 py-1.5 focus:outline-none focus:border-salmon-500 cursor-pointer font-medium">
+                    <option value="th">🇹🇭 TH</option>
+                    <option value="en">🇺🇸 EN</option>
+                    <option value="zh-CN">🇨🇳 ZH</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Area -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- Left Drawer / Sidebar -->
+        <aside id="sidebar" class="w-72 bg-white border-r border-slate-200 flex flex-col shrink-0 absolute md:relative z-30 h-full transition-transform duration-200 -translate-x-full md:translate-x-0 shadow-xl md:shadow-none">
+            
+            <!-- Sidebar Action Header -->
+            <div class="p-3 border-b border-slate-100 space-y-2">
+                <button onclick="resetChat()" class="w-full py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-xs transition flex items-center justify-center gap-2 border border-slate-200">
+                    <i class="fa-solid fa-plus text-salmon-500"></i>
+                    <span data-i18n="new_chat">เริ่มการสนทนาใหม่</span>
+                </button>
+            </div>
+
+            <!-- Scrollable Sidebar Content -->
+            <div class="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar text-xs">
+
+                <!-- 1. Faculty Fast Selector -->
+                <div class="space-y-1.5 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                    <label class="block font-semibold text-slate-700 text-[11px]" data-i18n="select_faculty">เลือกคณะ</label>
+                    <select id="sidebarFacultySelect" onchange="quickLoadFacultyPreset(this.value)" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:border-salmon-500 text-xs">
+                        <option value="" data-i18n="choose_faculty">-- เลือกคณะเพื่อพรีเซ็ตวิชา --</option>
+                        <option value="eng">คณะวิศวกรรมศาสตร์</option>
+                        <option value="sci">คณะวิทยาศาสตร์</option>
+                        <option value="bus">คณะบริหารธุรกิจ</option>
+                        <option value="econ">คณะเศรษฐศาสตร์</option>
+                        <option value="hum">คณะมนุษยศาสตร์</option>
+                        <option value="soc">คณะสังคมศาสตร์</option>
+                        <option value="med">คณะแพทยศาสตร์ / สัตวแพทย์ / เภสัช</option>
+                    </select>
+                </div>
+
+                <!-- 2. Pomodoro Focus Timer Widget -->
+                <div class="p-3.5 bg-gradient-to-br from-salmon-500 to-orange-500 text-white rounded-2xl shadow-sm space-y-2.5">
+                    <div class="flex items-center justify-between text-xs font-semibold">
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-stopwatch"></i>
+                            <span data-i18n="pomodoro_title">นาฬิกาโฟกัส Pomodoro</span>
+                        </span>
+                        <span id="pomoStatus" class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-mono">25:00</span>
+                    </div>
+
+                    <div class="text-center py-1">
+                        <span id="pomoDisplay" class="text-3xl font-bold font-mono tracking-tight">25:00</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-1.5 pt-1">
+                        <button onclick="togglePomodoro()" class="py-1.5 bg-white text-salmon-600 font-bold rounded-xl text-xs hover:bg-slate-100 transition shadow-sm">
+                            <span id="pomoBtnText" data-i18n="start">เริ่ม</span>
+                        </button>
+                        <button onclick="resetPomodoro()" class="py-1.5 bg-black/20 text-white font-medium rounded-xl text-xs hover:bg-black/30 transition">
+                            รีเซ็ต
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. Realistic Routine Templates Quick Chips -->
+                <div class="space-y-2">
+                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block px-1" data-i18n="routine_templates">เทมเพลตชีวิตประจำวันตามจริง</span>
+                    
+                    <button onclick="sendQuickPrompt('ช่วยจัดตารางอ่านสอบสำหรับเด็กหอ เรียน 09:00-16:00 น. ขอนอนเต็มอิ่ม 8 ชั่วโมง ไม่หักโหมครับ')" class="w-full text-left p-2.5 bg-slate-50 hover:bg-salmon-50 hover:border-salmon-200 border border-slate-200 rounded-xl transition text-slate-700 text-xs flex items-center justify-between group">
+                        <span class="line-clamp-1" data-i18n="chip_dorm">เด็กหอ/นิสิต (เรียน 9-16 น. + นอนเต็ม)</span>
+                        <i class="fa-solid fa-chevron-right text-[10px] text-slate-400 group-hover:text-salmon-500"></i>
+                    </button>
+
+                    <button onclick="sendQuickPrompt('ขอตารางอ่านสอบเน้นช่วงเย็น 18:00-22:00 น. เว้นช่วงกินข้าวและพักสมอง 1 ชั่วโมงครับ')" class="w-full text-left p-2.5 bg-slate-50 hover:bg-salmon-50 hover:border-salmon-200 border border-slate-200 rounded-xl transition text-slate-700 text-xs flex items-center justify-between group">
+                        <span class="line-clamp-1" data-i18n="chip_evening">อ่านเฉพาะช่วงเย็น (พักทานข้าว+สมอง)</span>
+                        <i class="fa-solid fa-chevron-right text-[10px] text-slate-400 group-hover:text-salmon-500"></i>
+                    </button>
+
+                    <button onclick="sendQuickPrompt('ฉันชอบอ่านหนังสือดึกช่วง 21:00-01:00 น. ช่วยจัดตารางที่ไม่กระทบสุขภาพตื่นเช้าครับ')" class="w-full text-left p-2.5 bg-slate-50 hover:bg-salmon-50 hover:border-salmon-200 border border-slate-200 rounded-xl transition text-slate-700 text-xs flex items-center justify-between group">
+                        <span class="line-clamp-1" data-i18n="chip_night">อ่านรอบดึก + ทวนสั้นๆ ตอนเช้า</span>
+                        <i class="fa-solid fa-chevron-right text-[10px] text-slate-400 group-hover:text-salmon-500"></i>
+                    </button>
+                </div>
+
+                <!-- 4. Google Account Status Sidebar Card -->
+                <div id="sidebarUserCard" class="p-3.5 bg-slate-900 text-slate-200 rounded-2xl space-y-2.5 border border-slate-800">
+                    <div id="sidebarUserGuest" class="space-y-2">
+                        <div class="flex items-center justify-between text-xs font-bold text-white">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-user-lock text-salmon-400"></i>
+                                <span>บัญชีผู้ใช้งาน</span>
+                            </span>
+                            <span class="text-[9px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-mono">Guest Mode</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 leading-relaxed">เข้าสู่ระบบเพื่อบันทึกและซิงค์ตารางสอบอัจฉริยะของคุณได้ทันที</p>
+                        <button onclick="loginWithGoogle()" class="w-full py-2 bg-white hover:bg-slate-100 text-slate-800 font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-sm">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                            </svg>
+                            <span>เข้าสู่ระบบ Google</span>
+                        </button>
+                    </div>
+
+                    <div id="sidebarUserLoggedIn" class="hidden space-y-2">
+                        <div class="flex items-center gap-2.5">
+                            <img id="sidebarUserAvatar" src="" class="w-9 h-9 rounded-xl object-cover border-2 border-salmon-500">
+                            <div class="min-w-0 flex-1">
+                                <div id="sidebarUserName" class="font-bold text-xs text-white truncate">ผู้ใช้งาน</div>
+                                <div id="sidebarUserEmail" class="text-[10px] text-slate-400 truncate">user@gmail.com</div>
+                            </div>
+                        </div>
+                        <div class="pt-1 flex items-center justify-between text-[10px] border-t border-slate-800">
+                            <span class="text-emerald-400 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-circle text-[6px]"></i> พร้อมบันทึกข้อมูล
+                            </span>
+                            <button onclick="logoutGoogle()" class="text-slate-400 hover:text-salmon-400 transition font-medium">
+                                ออกจากระบบ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="p-3 border-t border-slate-100 text-center text-[10px] text-slate-400">
+                Salmon AI Companion v3.2 • Powered by Gemini 3
+            </div>
+        </aside>
+
+        <!-- Sidebar Backdrop Overlay for Mobile -->
+        <div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/40 z-20 md:hidden hidden"></div>
+
+        <!-- Right Main Chat & Planning Workspace -->
+        <main class="flex-1 flex flex-col h-full bg-slate-50 relative min-w-0">
+            
+            <!-- Chat Messages Container -->
+            <div id="chatContainer" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 custom-scrollbar">
+                
+                <!-- Initial Welcome Message Card -->
+                <div class="flex gap-3 max-w-3xl">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-salmon-500 to-orange-400 flex items-center justify-center text-white text-sm shrink-0 shadow-sm">
+                        <i class="fa-solid fa-fish"></i>
+                    </div>
+                    <div class="space-y-1.5 flex-1">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-xs text-slate-700" data-i18n="ai_name">พี่แซลม่อน AI (ผู้ช่วยวางแผนสอบ)</span>
+                            <span class="text-[10px] text-slate-400">เมื่อครู่นี้</span>
+                        </div>
+                        <div class="bg-white border border-slate-200 text-slate-800 p-4 rounded-2xl rounded-tl-none shadow-sm text-xs leading-relaxed space-y-2.5">
+                            <p data-i18n="welcome_msg_1">สวัสดีครับ! ผม **พี่แซลม่อน AI** พร้อมที่จะพาคุณก้าวสู่เป้าหมายการอ่านหนังสือและเตรียมสอบอย่างมั่นใจครับ 🐟✨</p>
+                            <p data-i18n="welcome_msg_2">ไม่ว่าคุณจะเป็นนักเรียน นิสิต/นักศึกษา (รวมถึงนิสิต มก. ทุกคณะ) หรือบุคคลทั่วไปที่อยากจัดระเบียบเวลาอ่านหนังสือให้มีประสิทธิภาพสูงสุด ผมพร้อมช่วยวางแผนอย่างเป็นระบบ อิงตาม **เวลานอน เวลาเรียน การทำงาน และเวลาพักผ่อนจริง** เพื่อให้คุณเก็งเนื้อหาได้ครบถ้วน ชนะทุกสนามสอบโดยไม่เหนื่อยล้าจนเกินไปครับ!</p>
+                            
+                            <div class="pt-2 flex flex-wrap gap-2">
+                                <button onclick="openQuickPlannerModal()" class="px-3 py-1.5 bg-salmon-50 hover:bg-salmon-100 text-salmon-700 border border-salmon-200 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    <span data-i18n="open_form_quick">เปิดฟอร์มกรอกข้อมูลวิชา</span>
+                                </button>
+                                <button onclick="openExternalHubModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-medium transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-camera text-sky-500"></i>
+                                    <span data-i18n="scan_ocr_btn">สแกนตารางสอบจากรูปภาพ</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Bottom Floating Input Controller Area -->
+            <div class="p-3 md:p-4 bg-white/90 backdrop-blur-md border-t border-slate-200 shrink-0">
+                <div class="max-w-4xl mx-auto space-y-2">
+                    
+                    <!-- Optional Image Attachment Preview Banner -->
+                    <div id="imagePreviewContainer" class="hidden p-2 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2">
+                            <img id="imagePreviewThumb" src="" class="w-8 h-8 rounded-lg object-cover border border-slate-300">
+                            <span class="text-slate-600 font-medium">แนบไฟล์รูปภาพตารางเรียน/สอบแล้ว</span>
+                        </div>
+                        <button onclick="clearImageAttachment()" class="text-slate-400 hover:text-slate-600 p-1">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Input Form Bar -->
+                    <div class="flex items-end gap-2 bg-slate-100 border border-slate-200 focus-within:border-salmon-500 focus-within:bg-white p-2 rounded-2xl transition shadow-inner">
+                        
+                        <!-- Attach Schedule Image Button -->
+                        <label class="p-2 text-slate-400 hover:text-salmon-500 cursor-pointer transition rounded-xl hover:bg-slate-200 shrink-0" title="แนบรูปภาพตารางสอบ/ตารางเรียน">
+                            <i class="fa-solid fa-paperclip text-base"></i>
+                            <input type="file" id="imageInput" accept="image/*" onchange="handleImageSelected(event)" class="hidden">
+                        </label>
+
+                        <!-- Grounding Google Search Toggle -->
+                        <label class="p-2 text-slate-400 hover:text-sky-600 cursor-pointer transition rounded-xl hover:bg-slate-200 shrink-0 flex items-center gap-1" title="เปิดใช้งาน Google Search ดึงข้อมูลเว็บภายนอก">
+                            <input type="checkbox" id="searchGroundingToggle" class="accent-sky-500 rounded cursor-pointer">
+                            <i class="fa-solid fa-globe text-sm"></i>
+                        </label>
+
+                        <!-- Main Textarea Input -->
+                        <textarea id="userInput" rows="1" oninput="autoResizeTextarea(this)" onkeydown="handleKeyDown(event)" placeholder="พิมพ์บอกวิชา วันสอบ หรือถามคำถามพี่แซลม่อน..." class="w-full bg-transparent border-none text-xs md:text-sm text-slate-800 focus:outline-none resize-none max-h-32 py-1.5 custom-scrollbar" data-i18n-placeholder="input_placeholder"></textarea>
+
+                        <!-- Send Button -->
+                        <button onclick="sendMessage()" class="p-2.5 bg-salmon-500 hover:bg-salmon-600 text-white rounded-xl transition shadow-md shadow-salmon-500/20 shrink-0 flex items-center justify-center">
+                            <i class="fa-solid fa-paper-plane text-xs"></i>
+                        </button>
+                    </div>
+
+                    <!-- Helper Footer Labels inside Input Container -->
+                    <div class="flex items-center justify-between text-[10px] text-slate-400 px-1">
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-shield-halved text-emerald-500"></i>
+                            <span>จัดตารางชีวิตตามความเป็นจริง • ปรับสมดุลตามเวลาเรียนและพักผ่อน</span>
+                        </span>
+                        <span id="charCounter">0 / 1000</span>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL 1: QUICK EXAM PLANNER (3-Step Wizard UX) -->
+    <div id="quickPlannerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-6 hidden">
+        <div class="bg-white rounded-3xl max-w-2xl w-full flex flex-col max-h-[90vh] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-150">
+            <div class="p-4 md:p-5 border-b border-slate-100 bg-slate-50 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-xl bg-salmon-500 text-white flex items-center justify-center text-base shadow-sm">
+                            <i class="fa-solid fa-calendar-check"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm md:text-base text-slate-800">วางแผนสอบด่วน (Quick Exam Planner)</h3>
+                            <p class="text-[11px] text-slate-500">กรอกข้อมูล 3 ขั้นตอนง่ายๆ เพื่อให้ AI คำนวณตารางสอบที่สมดุล</p>
+                        </div>
+                    </div>
+                    <button onclick="closeQuickPlannerModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-200 transition">
+                        <i class="fa-solid fa-xmark text-base"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 pt-1 text-[11px]">
+                    <div class="flex items-center gap-2 p-2 rounded-xl bg-salmon-50 border border-salmon-200 text-salmon-700 font-semibold">
+                        <span class="w-5 h-5 rounded-full bg-salmon-500 text-white flex items-center justify-center text-[10px]">1</span>
+                        <span>เลือกวิชาสอบ</span>
+                    </div>
+                    <div class="flex items-center gap-2 p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 font-medium">
+                        <span class="w-5 h-5 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center text-[10px]">2</span>
+                        <span>เวลาชีวิตจริง</span>
+                    </div>
+                    <div class="flex items-center gap-2 p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 font-medium">
+                        <span class="w-5 h-5 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center text-[10px]">3</span>
+                        <span>รับตารางอ่าน</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 md:p-6 overflow-y-auto custom-scrollbar space-y-4 text-xs">
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-2 text-amber-900 text-[11px]">
+                    <i class="fa-solid fa-lightbulb text-amber-500 text-sm mt-0.5 shrink-0"></i>
+                    <div>
+                        <span class="font-bold">คำแนะนำใช้ง่าย:</span> คุณสามารถคลิกเลือกพรีเซ็ตรายวิชาตามคณะเพื่อความสะดวก หรือพิมพ์ชื่อวิชาที่ต้องการเองได้ทันที
+                    </div>
+                </div>
+
+                <div class="space-y-3 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
+                    <h4 class="font-bold text-slate-800 text-xs flex items-center gap-1.5 border-b border-slate-200 pb-2">
+                        <span class="w-4 h-4 rounded-full bg-salmon-500 text-white text-[10px] inline-flex items-center justify-center">1</span>
+                        <span>เลือกคณะและรายวิชาที่จะสอบ</span>
+                    </h4>
+
+                    <div>
+                        <label class="block font-medium text-slate-600 mb-1">เลือกคณะวิชา (เพื่อดึงพรีเซ็ตวิชาอัตโนมัติ)</label>
+                        <select id="modalFacultySelect" onchange="loadFacultyCoursePresets(this.value)" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:border-salmon-500">
+                            <option value="gen">ทั่วไป / General Standard</option>
+                            <option value="eng">คณะวิศวกรรมศาสตร์</option>
+                            <option value="sci">คณะวิทยาศาสตร์</option>
+                            <option value="bus">คณะบริหารธุรกิจ</option>
+                            <option value="econ">คณะเศรษฐศาสตร์</option>
+                            <option value="hum">คณะมนุษยศาสตร์</option>
+                            <option value="soc">คณะสังคมศาสตร์</option>
+                            <option value="med">คณะแพทยศาสตร์ / สัตวแพทย์ / เภสัช</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="font-medium text-slate-600">รายวิชาที่จะสอบ (คั่นด้วยเครื่องหมายจุลภาค , )</label>
+                            <button type="button" class="text-[10px] text-salmon-600 font-semibold cursor-pointer hover:underline flex items-center gap-1" onclick="insertPresetCourses()">
+                                <i class="fa-solid fa-wand-sparkles"></i> <span>+ ดึงวิชาตัวอย่างคณะ</span>
+                            </button>
+                        </div>
+                        <input type="text" id="modalSubjects" placeholder="เช่น 01204111 คอมพิวเตอร์, 01417111 แคลคูลัส I, ภาษาอังกฤษ" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-salmon-500 shadow-sm">
+                    </div>
+                </div>
+
+                <div class="p-3.5 bg-salmon-50/60 border border-salmon-200/60 rounded-2xl space-y-3">
+                    <h4 class="font-bold text-slate-800 text-xs flex items-center gap-1.5 border-b border-salmon-200/60 pb-2">
+                        <span class="w-4 h-4 rounded-full bg-salmon-500 text-white text-[10px] inline-flex items-center justify-center">2</span>
+                        <span>กำหนดเวลาชีวิตประจำวันจริง (Realistic Schedule)</span>
+                    </h4>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">ช่วงวันสอบ</label>
+                            <input type="text" id="modalExamDates" placeholder="เช่น วันที่ 5-7 ตุลาคม 2026" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-salmon-500">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">เป้าหมายเวลาอ่านต่อวัน</label>
+                            <select id="modalStudyHours" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-salmon-500">
+                                <option value="1 ชั่วโมงต่อวัน (เบาๆ ทบทวนก่อนสอบ)">1 ชั่วโมงต่อวัน (ผ่อนคลาย/เน้นทวนจุดสำคัญ)</option>
+                                <option value="2-3 ชั่วโมงต่อวัน (มาตรฐานแนะนำ)" selected>2-3 ชั่วโมงต่อวัน (ระดับมาตรฐานสิริมงคล)</option>
+                                <option value="4-5 ชั่วโมงต่อวัน (เข้มข้นก่อนสอบ)">4-5 ชั่วโมงต่อวัน (โหมดสอบสู้ชีวิต)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2.5 pt-1">
+                        <div>
+                            <label class="block text-[11px] text-slate-600 mb-1">💤 เวลานอนปกติ</label>
+                            <input type="time" id="modalSleepTime" value="23:00" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-slate-800">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-600 mb-1">⏰ เวลาตื่นนอน</label>
+                            <input type="time" id="modalWakeTime" value="07:00" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-slate-800">
+                        </div>
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="block text-[11px] text-slate-600 mb-1">📚 ช่วงเรียน/ทำงานติดพัน</label>
+                            <input type="text" id="modalClassHours" value="09:00-16:00" placeholder="09:00-16:00" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-slate-800">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50">
+                <span class="text-[11px] text-slate-400 flex items-center gap-1">
+                    <i class="fa-solid fa-shield-halved text-emerald-500"></i> AI จะไม่จัดให้อ่านหนังสือแน่นเกินไป
+                </span>
+                <div class="flex items-center gap-2">
+                    <button onclick="closeQuickPlannerModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-medium transition">ยกเลิก</button>
+                    <button onclick="submitQuickPlanner()" class="px-5 py-2 bg-salmon-500 hover:bg-salmon-600 text-white rounded-xl font-medium shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> <span>สร้างตารางสอบอัจฉริยะ</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: VISUAL TIMETABLE & EXPORT PLANNER -->
+    <div id="timetableModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-3 md:p-6 hidden">
+        <div class="bg-white rounded-3xl max-w-4xl w-full flex flex-col max-h-[92vh] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-150">
+            <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-900 text-white">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-salmon-500 flex items-center justify-center text-white text-sm">
+                        <i class="fa-solid fa-table"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm md:text-base">ตารางการจัดเวลาเตรียมสอบ (Visual Planner Card)</h3>
+                        <p class="text-[10px] text-slate-400">ตรวจสอบความถูกต้องและเลือกดาวน์โหลดรูปภาพหรือส่งออกไปยังปฏิทิน</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button onclick="downloadPlannerAsPNG()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-medium transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-download"></i> <span class="hidden sm:inline">ดาวน์โหลด PNG</span>
+                    </button>
+                    <button onclick="exportPlannerToICS()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-medium transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-regular fa-calendar-check"></i> <span class="hidden sm:inline">ลงปฏิทิน (.ics)</span>
+                    </button>
+                    <button onclick="closeTimetableModal()" class="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-4 md:p-6 overflow-y-auto custom-scrollbar bg-slate-100 flex-1 space-y-4">
+                <div class="p-3 bg-sky-50 border border-sky-200 rounded-2xl flex items-center justify-between text-sky-900 text-xs">
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-sky-500 text-base"></i>
+                        <span>กดปุ่ม <b>"ดาวน์โหลด PNG"</b> เพื่อนำรูปตารางไปบันทึกลงสมาร์ทโฟนแบบคมชัดความละเอียดสูง</span>
+                    </span>
+                </div>
+
+                <!-- Modern Minimalist Clean Planner Download Card -->
+                <div id="printablePlanner" class="bg-white p-6 sm:p-8 rounded-3xl shadow-lg border border-slate-100 space-y-5 max-w-3xl mx-auto text-slate-800 relative overflow-hidden">
+                    
+                    <!-- Clean Accent Top Bar -->
+                    <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-salmon-500 via-orange-400 to-amber-400"></div>
+
+                    <!-- Header Area -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4 pt-1">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-salmon-500 to-orange-400 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-salmon-500/20">
+                                <i class="fa-solid fa-fish"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h2 class="text-base sm:text-lg font-bold text-slate-900 tracking-tight" id="plannerCardTitle">ตารางเตรียมสอบอัจฉริยะ</h2>
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-salmon-50 text-salmon-600 border border-salmon-200">KU Plan</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5" id="plannerCardSubtitle">คำนวณสัดส่วนเวลาเรียนและเวลาพักผ่อนตามความเป็นจริง</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl shadow-xs">
+                                <i class="fa-regular fa-clock text-salmon-500"></i>
+                                <span id="plannerCardDateBadge">Smart Schedule</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Clean Table Render Container -->
+                    <div id="plannerTableRenderArea" class="overflow-x-auto custom-scrollbar rounded-2xl border border-slate-200 bg-white">
+                        <!-- Dynamic rendered table from chat markdown -->
+                    </div>
+
+                    <!-- Clean Minimalist Footer & Legend -->
+                    <div class="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-3">
+                        <div class="flex flex-wrap items-center gap-2 text-[11px] font-medium">
+                            <span class="flex items-center gap-1.5 bg-salmon-50 text-salmon-700 px-2.5 py-1 rounded-lg border border-salmon-200/60">
+                                <span class="w-2 h-2 rounded-full bg-salmon-500"></span> ช่วงทบทวน (Focus)
+                            </span>
+                            <span class="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-200/60">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> ช่วงพักผ่อน (Break)
+                            </span>
+                            <span class="flex items-center gap-1.5 bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-200">
+                                <span class="w-2 h-2 rounded-full bg-slate-400"></span> กิจวัตรประจำวัน
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-[11px] text-slate-400 font-semibold font-mono">
+                            <i class="fa-solid fa-sparkles text-salmon-400"></i>
+                            <span>Salmon AI Companion</span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: EXTERNAL MULTI-AI HUB -->
+    <div id="externalHubModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-3 md:p-6 hidden">
+        <div class="bg-white rounded-3xl max-w-2xl w-full flex flex-col max-h-[90vh] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-150">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-sky-500 text-white flex items-center justify-center text-base shadow-sm">
+                        <i class="fa-solid fa-network-wired"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm md:text-base text-slate-800">ศูนย์นำเข้าข้อมูลและเชื่อมต่อ AI ภายนอก</h3>
+                        <p class="text-[11px] text-slate-500">นำเข้าข้อมูลจาก ChatGPT / Claude / DeepSeek หรือสแกนตารางสอบด้วย AI Vision</p>
+                    </div>
+                </div>
+                <button onclick="closeExternalHubModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <div class="p-4 md:p-6 overflow-y-auto custom-scrollbar space-y-4 text-xs">
+                <div class="p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1">
+                    <div class="font-bold text-slate-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-question text-sky-500"></i> วิธีใช้งานหน้านี้:
+                    </div>
+                    <ol class="list-decimal list-inside text-[11px] text-slate-600 space-y-0.5 pl-1">
+                        <li>หากมีคำตอบจาก ChatGPT หรือ Claude ให้ **คัดลอกข้อความ** มาวางในช่องด้านล่าง</li>
+                        <li>หากมี **รูปถ่ายตารางเรียน/สอบ** ให้เลือกล่างสุดเพื่อส่งให้ AI สแกน OCR อัตโนมัติ</li>
+                    </ol>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">1. วางข้อความตารางจาก AI ตัวอื่น (ChatGPT / Claude / DeepSeek / Gemini)</label>
+                    <textarea id="hubImportText" rows="4" placeholder="ก๊อปปี้ข้อความตารางสอบ หรือเนื้อหาที่ได้จาก AI ตัวอื่นมาวางที่นี่..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-sky-500 custom-scrollbar"></textarea>
+                </div>
+
+                <div class="p-3.5 bg-sky-50 border border-sky-200 rounded-2xl flex items-center justify-between">
+                    <div class="space-y-0.5">
+                        <div class="font-bold text-sky-900">2. 📷 สแกนตารางสอบจากไฟล์รูปภาพ (OCR Vision)</div>
+                        <div class="text-[11px] text-sky-700">ระบบจะใช้ AI อ่านรายวิชาและวันสอบจากภาพถ่ายตารางเรียนของคุณ</div>
+                    </div>
+                    <label class="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl cursor-pointer transition shadow-sm text-xs flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-camera"></i>
+                        <span>เลือกรูปภาพ</span>
+                        <input type="file" accept="image/*" onchange="handleHubImageOCR(event)" class="hidden">
+                    </label>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 flex items-center justify-end gap-2 bg-slate-50">
+                <button onclick="closeExternalHubModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-medium transition">ปิด</button>
+                <button onclick="processHubImport()" class="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-medium shadow-sm transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-import"></i> <span>ประมวลผลเข้าสู่ตารางแซลม่อน</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: USER GUIDE MODAL -->
+    <div id="userGuideModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-3 md:p-6 hidden">
+        <div class="bg-white rounded-3xl max-w-3xl w-full flex flex-col max-h-[90vh] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-150">
+            <div class="p-4 md:p-5 border-b border-slate-100 flex items-center justify-between bg-amber-50">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center text-base shadow-sm">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm md:text-base text-slate-800">📖 คู่มือแนะนำการใช้งานระบบ (Quick User Guide)</h3>
+                        <p class="text-[11px] text-slate-600">ทำความเข้าใจการทำงานของเครื่องมือต่างๆ ใน 1 นาที</p>
+                    </div>
+                </div>
+                <button onclick="closeUserGuideModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <div class="p-4 md:p-6 overflow-y-auto custom-scrollbar space-y-4 text-xs">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                        <div class="flex items-center gap-2 font-bold text-slate-800 text-sm">
+                            <div class="w-7 h-7 rounded-lg bg-salmon-500 text-white flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-calendar-plus"></i>
+                            </div>
+                            <span>1. ฟอร์มจัดตารางด่วน</span>
+                        </div>
+                        <p class="text-slate-600 text-[11px] leading-relaxed">
+                            คลิกที่ปุ่ม <b>"จัดตารางด่วน"</b> เพื่อกรอกชื่อรายวิชา และระบุเวลาชีวิตจริง (เวลานอน เวลาเรียน การเดินทาง) AI จะคำนวณและสร้างตารางที่ไม่หักโหมให้อัตโนมัติ
+                        </p>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                        <div class="flex items-center gap-2 font-bold text-slate-800 text-sm">
+                            <div class="w-7 h-7 rounded-lg bg-sky-500 text-white flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-camera"></i>
+                            </div>
+                            <span>2. สแกนรูปถ่ายตารางสอบ</span>
+                        </div>
+                        <p class="text-slate-600 text-[11px] leading-relaxed">
+                            คลิกที่รูป **ไอคอนคลิปหนีบกระดาษ** ในช่องพิมพ์ หรือปุ่ม Multi-AI เพื่ออัปโหลดรูปภาพตารางเรียน/สอบ ระบบจะใช้วิเคราะห์ตัวหนังสือจากภาพทันที
+                        </p>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                        <div class="flex items-center gap-2 font-bold text-slate-800 text-sm">
+                            <div class="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-image"></i>
+                            </div>
+                            <span>3. บันทึกตารางเป็นภาพ / ปฏิทิน</span>
+                        </div>
+                        <p class="text-slate-600 text-[11px] leading-relaxed">
+                            เมื่อ AI ตอบตารางเป็นรูปแบบตาราง จะมีปุ่ม <b>"ดูตาราง Visual Planner Card"</b> ปรากฏขึ้น เพื่อให้กดดาวน์โหลดเป็นไฟล์ PNG หรือซิงค์ลงปฏิทินมือถือ
+                        </p>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                        <div class="flex items-center gap-2 font-bold text-slate-800 text-sm">
+                            <div class="w-7 h-7 rounded-lg bg-indigo-500 text-white flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-stopwatch"></i>
+                            </div>
+                            <span>4. นาฬิกา Pomodoro ตัวช่วยโฟกัส</span>
+                        </div>
+                        <p class="text-slate-600 text-[11px] leading-relaxed">
+                            ที่เมนูด้านซ้ายมือ มีตัวจับเวลา Pomodoro (25 นาทีอ่าน / 5 นาทีพัก) สำหรับเปิดใช้งานระหว่างอ่านหนังสือเพื่อรักษาความโฟกัส
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 flex items-center justify-end bg-slate-50">
+                <button onclick="closeUserGuideModal()" class="px-5 py-2 bg-salmon-500 hover:bg-salmon-600 text-white rounded-xl font-medium transition shadow-sm">
+                    เข้าใจแล้ว เริ่มใช้งานเลย!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: SHARE & WEB LINK MODAL -->
+    <div id="shareModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-3 md:p-6 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full flex flex-col max-h-[90vh] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-150">
+            <div class="p-4 md:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-salmon-500 text-white flex items-center justify-center text-base shadow-sm">
+                        <i class="fa-solid fa-link"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm md:text-base text-slate-800">ทางเข้าและแชร์ลิงก์เว็บไซต์</h3>
+                        <p class="text-[11px] text-slate-500">คัดลอกลิงก์หรือสแกน QR Code เพื่อเปิดใช้งานบนมือถือ</p>
+                    </div>
+                </div>
+                <button onclick="closeShareModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <div class="p-4 md:p-6 overflow-y-auto custom-scrollbar space-y-4 text-xs">
+                <!-- Direct Website Link Input & Copy Button -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block font-semibold text-slate-700 text-xs">🔗 ลิงก์ทางเข้าเว็บไซต์ (URL)</label>
+                        <span id="sandboxNotice" class="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md font-medium hidden">
+                            <i class="fa-solid fa-pen"></i> แก้ไข URL ได้
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="url" id="shareUrlInput" oninput="handleShareUrlInput()" placeholder="https://your-domain.com" class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 text-xs font-mono focus:outline-none focus:border-salmon-500 shadow-sm">
+                        <button onclick="copyShareUrl()" id="copyShareBtn" class="px-4 py-2.5 bg-salmon-500 hover:bg-salmon-600 text-white font-semibold rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-sm">
+                            <i class="fa-regular fa-copy"></i>
+                            <span>คัดลอก</span>
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-500 leading-relaxed">
+                        💡 <b>คำแนะนำ:</b> สามารถพิมพ์แก้ไขใส่โดเมนเว็บไซต์จริงของคุณ (เช่น ที่โฮสต์บน Vercel / GitHub Pages / Firebase) ได้ทันที QR Code จะปรับตามแบบเรียลไทม์ครับ
+                    </p>
+                </div>
+
+                <!-- QR Code Display Area -->
+                <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col items-center justify-center text-center space-y-2.5">
+                    <span class="font-bold text-slate-700 text-xs">📱 สแกน QR Code เพื่อเปิดบนสมาร์ทโฟน</span>
+                    <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center min-h-[160px]" id="qrContainer">
+                        <img id="shareQrImage" src="" alt="QR Code" class="w-40 h-40 object-contain rounded-lg">
+                    </div>
+                    <div class="flex items-center gap-2 pt-1">
+                        <button onclick="downloadQrCode()" class="px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl text-[11px] transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-download text-salmon-500"></i>
+                            <span>ดาวน์โหลดภาพ QR Code</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Native Share Button if supported -->
+                <div id="nativeShareContainer" class="hidden">
+                    <button onclick="triggerNativeShare()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 shadow-sm text-xs">
+                        <i class="fa-solid fa-share-nodes"></i>
+                        <span>แชร์ไปยังแอปพลิเคชัน (Line / Facebook / Messenger)</span>
+                    </button>
+                </div>
+
+                <!-- Hosting Instructions -->
+                <div class="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-[11px] space-y-1">
+                    <div class="font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-cloud-arrow-up text-amber-600"></i>
+                        <span>ต้องการสร้างเว็บไซต์เป็นลิงก์ของคุณเองแบบออนไลน์ฟรี?</span>
+                    </div>
+                    <p class="leading-relaxed">สามารถนำโค้ดในไฟล์ <code class="bg-amber-100 px-1 rounded text-amber-900 font-mono">index.html</code> ไปอัปโหลดขึ้น **GitHub Pages**, **Vercel** หรือ **Firebase Hosting** เพื่อสร้างโดเมนเว็บส่วนตัวส่งให้เพื่อนๆ เข้าใช้งานได้ฟรีตลอด 24 ชั่วโมงครับ</p>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 flex items-center justify-end bg-slate-50">
+                <button onclick="closeShareModal()" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-medium transition">
+                    ปิดหน้าต่าง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase JS & Google Auth Engine -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // Initialize Firebase
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyDemoKeySalmonPlannerOnlyForUIFallback",
+            authDomain: "salmon-ai-planner.firebaseapp.com",
+            projectId: "salmon-ai-planner",
+            storageBucket: "salmon-ai-planner.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:salmonplanner"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        window.firebaseAuth = auth;
+
+        // Google Sign In Handler
+        window.loginWithGoogle = async function() {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                console.log("Logged in user:", result.user);
+            } catch (error) {
+                console.error("Google Sign In Error:", error);
+                alert("ไม่สามารถเข้าสู่ระบบด้วย Google ได้: " + (error.message || "กรุณาลองใหม่อีกครั้ง"));
+            }
+        };
+
+        // Google Sign Out Handler
+        window.logoutGoogle = async function() {
+            try {
+                await signOut(auth);
+                console.log("User logged out");
+            } catch (error) {
+                console.error("Logout Error:", error);
+            }
+        };
+
+        // Initial custom auth token auto-sign-in if present
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            signInWithCustomToken(auth, __initial_auth_token).catch(() => {
+                signInAnonymously(auth).catch(() => {});
+            });
+        }
+
+        // Auth state listener
+        onAuthStateChanged(auth, (user) => {
+            window.currentUser = user;
+            updateUserUI(user);
+        });
+
+        // Update UI based on User Login Status
+        function updateUserUI(user) {
+            const googleSignInBtn = document.getElementById('googleSignInBtn');
+            const userProfileHeader = document.getElementById('userProfileHeader');
+            const userAvatar = document.getElementById('userAvatar');
+            const userName = document.getElementById('userName');
+
+            const sidebarUserGuest = document.getElementById('sidebarUserGuest');
+            const sidebarUserLoggedIn = document.getElementById('sidebarUserLoggedIn');
+            const sidebarUserAvatar = document.getElementById('sidebarUserAvatar');
+            const sidebarUserName = document.getElementById('sidebarUserName');
+            const sidebarUserEmail = document.getElementById('sidebarUserEmail');
+
+            if (user && !user.isAnonymous) {
+                const displayName = user.displayName || 'ผู้ใช้งาน';
+                const photoURL = user.photoURL || `https://placehold.co/100x100/ff5733/ffffff?text=${encodeURIComponent(displayName.charAt(0))}`;
+                const email = user.email || '';
+
+                if (googleSignInBtn) googleSignInBtn.classList.add('hidden');
+                if (userProfileHeader) {
+                    userProfileHeader.classList.remove('hidden');
+                    userProfileHeader.classList.add('flex');
+                }
+                if (userAvatar) userAvatar.src = photoURL;
+                if (userName) userName.innerText = displayName;
+
+                if (sidebarUserGuest) sidebarUserGuest.classList.add('hidden');
+                if (sidebarUserLoggedIn) sidebarUserLoggedIn.classList.remove('hidden');
+                if (sidebarUserAvatar) sidebarUserAvatar.src = photoURL;
+                if (sidebarUserName) sidebarUserName.innerText = displayName;
+                if (sidebarUserEmail) sidebarUserEmail.innerText = email;
+            } else {
+                if (googleSignInBtn) googleSignInBtn.classList.remove('hidden');
+                if (userProfileHeader) {
+                    userProfileHeader.classList.add('hidden');
+                    userProfileHeader.classList.remove('flex');
+                }
+
+                if (sidebarUserGuest) sidebarUserGuest.classList.remove('hidden');
+                if (sidebarUserLoggedIn) sidebarUserLoggedIn.classList.add('hidden');
+            }
+        }
+    </script>
+
+    <!-- JavaScript Application Engine -->
+    <script>
+        // Global Application State & Constants
+        const modelName = 'gemini-3-flash-preview';
+        const apiKey = ''; // Provided automatically at runtime
+
+        let chatHistory = [];
+        let currentLanguage = 'th';
+        let attachedImageBase64 = null;
+
+        // Multi-Language Translation Dictionary
+        const i18nDict = {
+            th: {
+                app_name: "แซลม่อน AI Planner",
+                ku_edition: "คณะ: ทั่วไป",
+                multi_ai_hub: "นำเข้า/Multi-AI",
+                quick_plan_btn: "จัดตารางด่วน",
+                user_guide_btn: "วิธีใช้งาน",
+                new_chat: "เริ่มการสนทนาใหม่",
+                pomodoro_title: "นาฬิกาโฟกัส Pomodoro",
+                start: "เริ่ม",
+                pause: "พัก",
+                select_faculty: "เลือกคณะ",
+                choose_faculty: "-- เลือกคณะเพื่อพรีเซ็ตวิชา --",
+                routine_templates: "เทมเพลตชีวิตประจำวันตามจริง",
+                chip_dorm: "เด็กหอ/นิสิต (เรียน 9-16 น. + นอนเต็ม)",
+                chip_evening: "อ่านเฉพาะช่วงเย็น (พักทานข้าว+สมอง)",
+                chip_night: "อ่านรอบดึก + ทวนสั้นๆ ตอนเช้า",
+                ai_name: "พี่แซลม่อน AI (ผู้ช่วยวางแผนสอบ)",
+                welcome_msg_1: "สวัสดีครับ! ผม **พี่แซลม่อน AI** พร้อมที่จะพาคุณก้าวสู่เป้าหมายการอ่านหนังสือและเตรียมสอบอย่างมั่นใจครับ 🐟✨",
+                welcome_msg_2: "ไม่ว่าคุณจะเป็นนักเรียน นิสิต/นักศึกษา (รวมถึงนิสิต มก. ทุกคณะ) หรือบุคคลทั่วไปที่อยากจัดระเบียบเวลาอ่านหนังสือให้มีประสิทธิภาพสูงสุด ผมพร้อมช่วยวางแผนอย่างเป็นระบบ อิงตาม **เวลานอน เวลาเรียน การทำงาน และเวลาพักผ่อนจริง** เพื่อให้คุณเก็งเนื้อหาได้ครบถ้วน ชนะทุกสนามสอบโดยไม่เหนื่อยล้าจนเกินไปครับ!",
+                open_form_quick: "เปิดฟอร์มกรอกข้อมูลวิชา",
+                scan_ocr_btn: "สแกนตารางสอบจากรูปภาพ",
+                input_placeholder: "พิมพ์บอกวิชา วันสอบ หรือถามคำถามพี่แซลม่อน...",
+                copy: "คัดลอก",
+                copied: "คัดลอกแล้ว!"
+            },
+            en: {
+                app_name: "Salmon AI Planner",
+                ku_edition: "KU 22 Faculties",
+                multi_ai_hub: "Import/Multi-AI",
+                quick_plan_btn: "Quick Planner",
+                user_guide_btn: "Guide",
+                new_chat: "New Chat",
+                pomodoro_title: "Pomodoro Focus Timer",
+                start: "Start",
+                pause: "Pause",
+                select_faculty: "Select KU Faculty",
+                choose_faculty: "-- Select Faculty Preset --",
+                routine_templates: "Realistic Daily Routines",
+                chip_dorm: "Student Dorm (9-4 Class + Full Sleep)",
+                chip_evening: "Evening Only (Dinner & Rest Buffer)",
+                chip_night: "Night Study + Quick Morning Review",
+                ai_name: "Salmon AI (Exam Planner)",
+                welcome_msg_1: "Hello! I am **Salmon AI**, ready to boost your confidence and guide you toward your academic & study goals 🐟✨",
+                welcome_msg_2: "Whether you are a school student, university undergrad (including KU students across all faculties), or anyone seeking an effective study schedule, I am here to build a realistic plan based on your **sleep, study/work, commute, and rest time**.",
+                open_form_quick: "Quick Exam Form",
+                scan_ocr_btn: "Scan Schedule Image",
+                input_placeholder: "Type exam subjects, dates, or ask Salmon AI...",
+                copy: "Copy",
+                copied: "Copied!"
+            },
+            "zh-CN": {
+                app_name: "Salmon AI 备考助手",
+                ku_edition: "KU 农业大学 22 学院",
+                multi_ai_hub: "导入/多AI枢纽",
+                quick_plan_btn: "快速排课",
+                user_guide_btn: "使用指南",
+                new_chat: "新建对话",
+                pomodoro_title: "番茄专注计时器",
+                start: "开始",
+                pause: "暂停",
+                select_faculty: "选择 KU 学院",
+                choose_faculty: "-- 选择学院预设 --",
+                routine_templates: "真实作息模板",
+                chip_dorm: "住校生 (9-16点上课 + 充沛睡眠)",
+                chip_evening: "仅晚间自习 (含用餐与休息)",
+                chip_night: "深夜复习 + 晨间快速温习",
+                ai_name: "Salmon AI (备考规划师)",
+                welcome_msg_1: "你好！我是 **Salmon AI**，为你注入满满自信，助力高效备考与自律学习 🐟✨",
+                welcome_msg_2: "无论你是中小学生、在校大学生（含 KU 泰农大各学院）还是想要高效规划阅读时间的各类学习者，我都能根据你的**睡眠、上课/工作、通勤和休息时间**制定合理科学的复习计划。",
+                open_form_quick: "填写考试表单",
+                scan_ocr_btn: "扫描考试日程图",
+                input_placeholder: "输入考试科目、日期或向 Salmon AI 提问...",
+                copy: "复制",
+                copied: "已复制!"
+            }
+        };
+
+        // Switch App Language
+        function switchLanguage(lang) {
+            currentLanguage = lang;
+            const dict = i18nDict[lang] || i18nDict['th'];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) el.innerText = dict[key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (dict[key]) el.placeholder = dict[key];
+            });
+        }
+
+        const SALMON_SYSTEM_PROMPT = `
+คุณคือ "พี่แซลม่อน AI" (Salmon AI Companion) ผู้ช่วยวางแผนอ่านหนังสือสอบและจัดตารางชีวิตประจำวันสำหรับนักเรียน นิสิต/นักศึกษา มหาวิทยาลัยเกษตรศาสตร์ (KU) ทุกคณะ รวมถึงสถาบันอื่นๆ และบุคคลทั่วไป
+คุณมีบุคลิก: สร้างความเชื่อมั่น ให้กำลังใจ มีเหตุผล และเข้าใจข้อจำกัดชีวิตจริง (Real Life Routines)
+
+กฎสำคัญในการตอบคำถามและจัดตาราง:
+1. **จัดเวลาตามจริง (Realistic Routines Only)**:
+   - ต้องเว้นเวลาสำหรับ นอนพักผ่อน (6-8 ชม.), มื้ออาหาร (เช้า เที่ยง เย็น), การเดินทาง, และช่วงเรียน/ทำงานติดพัน
+   - ห้ามอ่านหนังสือยาวเกิน 3 ชั่วโมงติดต่อกันโดยไม่มีวันพักสั้นๆ
+   - ห้ามจัดให้อ่านหนังสือช่วง 01:00-05:00 น. เด็ดขาด เว้นแต่ผู้ใช้จะระบุว่าเป็นสายอ่านดึกจริงๆ
+2. **ปรับสไตล์ตามกลุ่มและคณะ (KU & General Learners)**:
+   - คณะกลุ่มวิทยาศาสตร์สุขภาพ (แพทยศาสตร์, สัตวแพทย์, เภสัช, พยาบาล): เน้น Flashcards, Anki, กายวิภาคศาสตร์, นิยาม และการทวนสั้นๆ หลายรอบ
+   - คณะกลุ่มคำนวณ/วิศวะ/วิทยาศาสตร์ (วิศกรรมศาสตร์, วิทยาศาสตร์, ชลประทาน): เน้นโจทย์ฝึกแก้ปัญหา, สูตร, ลำดับการทำโจทย์
+   - คณะกลุ่มสังคม/บริหาร/มนุษย์/บุคคลทั่วไป: เน้น Case Study, การทำ Mind Map, คำศัพท์ และการจัดลำดับหัวข้ออย่างเป็นระบบ
+3. **โครงสร้างตารางต้องกระชับ อ่านง่าย**:
+   - ให้สร้างตารางในรูปแบบ Markdown Table เสมอ เพื่อให้ระบบนำไปแสดงผลเป็น Planner Card ได้
+   - ระบุ ช่วงเวลา, รายวิชา, กิจกรรม/เทคนิคที่ต้องทำ, และเวลาพัก ให้ชัดเจน
+`;
+
+        // User Guide Modal Functions
+        function openUserGuideModal() {
+            document.getElementById('userGuideModal').classList.remove('hidden');
+        }
+
+        function closeUserGuideModal() {
+            document.getElementById('userGuideModal').classList.add('hidden');
+        }
+
+        // Pomodoro Timer Logic
+        let pomoTime = 25 * 60;
+        let pomoInterval = null;
+        let isPomoRunning = false;
+
+        function togglePomodoro() {
+            if (isPomoRunning) {
+                clearInterval(pomoInterval);
+                isPomoRunning = false;
+                document.getElementById('pomoBtnText').innerText = currentLanguage === 'en' ? 'Start' : 'เริ่ม';
+            } else {
+                isPomoRunning = true;
+                document.getElementById('pomoBtnText').innerText = currentLanguage === 'en' ? 'Pause' : 'พัก';
+                pomoInterval = setInterval(() => {
+                    if (pomoTime > 0) {
+                        pomoTime--;
+                        updatePomoDisplay();
+                    } else {
+                        clearInterval(pomoInterval);
+                        isPomoRunning = false;
+                        alert("🎉 หมดเวลาอ่านแล้วครับ! พักสายตา 5 นาทีกันเถอะ!");
+                        resetPomodoro();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetPomodoro() {
+            clearInterval(pomoInterval);
+            isPomoRunning = false;
+            pomoTime = 25 * 60;
+            updatePomoDisplay();
+            document.getElementById('pomoBtnText').innerText = currentLanguage === 'en' ? 'Start' : 'เริ่ม';
+        }
+
+        function updatePomoDisplay() {
+            const mins = Math.floor(pomoTime / 60).toString().padStart(2, '0');
+            const secs = (pomoTime % 60).toString().padStart(2, '0');
+            document.getElementById('pomoDisplay').innerText = `${mins}:${secs}`;
+            document.getElementById('pomoStatus').innerText = `${mins}:${secs}`;
+        }
+
+        // Auto Resize Textarea
+        function autoResizeTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = (el.scrollHeight) + 'px';
+            document.getElementById('charCounter').innerText = `${el.value.length} / 1000`;
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // Sidebar Drawer Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            sidebar.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
+
+        // Reset Chat
+        function resetChat() {
+            chatHistory = [];
+            const container = document.getElementById('chatContainer');
+            container.innerHTML = `
+                <div class="flex gap-3 max-w-3xl">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-salmon-500 to-orange-400 flex items-center justify-center text-white text-sm shrink-0 shadow-sm">
+                        <i class="fa-solid fa-fish"></i>
+                    </div>
+                    <div class="space-y-1.5 flex-1">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-xs text-slate-700" data-i18n="ai_name">พี่แซลม่อน AI (ผู้ช่วยวางแผนสอบ)</span>
+                            <span class="text-[10px] text-slate-400">เมื่อครู่นี้</span>
+                        </div>
+                        <div class="bg-white border border-slate-200 text-slate-800 p-4 rounded-2xl rounded-tl-none shadow-sm text-xs leading-relaxed space-y-2">
+                            <p>เริ่มการสนทนาใหม่แล้วครับ พิมพ์บอกรายวิชา วันสอบ หรือตารางเวลาชีวิตของคุณ แล้วให้พี่แซลม่อนพาคุณไปถึงเป้าหมายด้วยกันได้เลยครับ! 🐟✨</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function sendMessage() {
+            const inputEl = document.getElementById('userInput');
+            const text = inputEl.value.trim();
+            if (!text && !attachedImageBase64) return;
+
+            appendUserMessage(text);
+            inputEl.value = '';
+            inputEl.style.height = 'auto';
+            document.getElementById('charCounter').innerText = '0 / 1000';
+
+            const loadingId = appendAiLoading();
+
+            try {
+                const isSearchGrounding = document.getElementById('searchGroundingToggle').checked;
+                
+                let parts = [{ text: text || "ช่วยจัดตารางสอบจากรูปภาพนี้ให้หน่อยครับ" }];
+                if (attachedImageBase64) {
+                    parts.push({
+                        inlineData: {
+                            mimeType: "image/png",
+                            data: attachedImageBase64
+                        }
+                    });
+                }
+
+                const payload = {
+                    contents: [
+                        { role: 'user', parts: [{ text: SALMON_SYSTEM_PROMPT }] },
+                        ...chatHistory,
+                        { role: 'user', parts: parts }
+                    ]
+                };
+
+                if (isSearchGrounding) {
+                    payload.tools = [{ "google_search": {} }];
+                }
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) throw new Error(`API Response Error: ${res.status}`);
+                const data = await res.json();
+                const responseText = data.candidates[0].content.parts[0].text;
+
+                document.getElementById(loadingId)?.remove();
+                clearImageAttachment();
+                appendAiMessage(responseText);
+
+                chatHistory.push({ role: 'user', parts: [{ text: text }] });
+                chatHistory.push({ role: 'model', parts: [{ text: responseText }] });
+
+            } catch (err) {
+                document.getElementById(loadingId)?.remove();
+                appendAiMessage(`⚠️ **การเชื่อมต่อขัดข้อง**: ${err.message || 'กรุณาลองส่งใหม่อีกครั้งครับ'}`);
+            }
+        }
+
+        function appendUserMessage(text) {
+            const container = document.getElementById('chatContainer');
+            const userHtml = `
+                <div class="flex gap-3 max-w-3xl justify-end ml-auto">
+                    <div class="space-y-1 flex-1 text-right">
+                        <div class="bg-salmon-500 text-white p-3.5 rounded-2xl rounded-tr-none shadow-sm text-xs leading-relaxed inline-block text-left">
+                            ${text}
+                            ${attachedImageBase64 ? `<div class="mt-2 text-[10px] bg-salmon-600 px-2 py-1 rounded">📷 แนบรูปภาพตารางเรียน/สอบ</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', userHtml);
+            scrollToBottom();
+        }
+
+        function appendAiLoading() {
+            const id = 'loading-' + Date.now();
+            const container = document.getElementById('chatContainer');
+            const loadingHtml = `
+                <div id="${id}" class="flex gap-3 max-w-3xl">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-salmon-500 to-orange-400 flex items-center justify-center text-white text-sm shrink-0 shadow-sm animate-pulse">
+                        <i class="fa-solid fa-fish"></i>
+                    </div>
+                    <div class="bg-white border border-slate-200 text-slate-500 p-3.5 rounded-2xl rounded-tl-none shadow-sm text-xs flex items-center gap-2">
+                        <i class="fa-solid fa-spinner fa-spin text-salmon-500"></i>
+                        <span>พี่แซลม่อนกำลังคิดและจัดตารางชีวิตตามความเป็นจริง...</span>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', loadingHtml);
+            scrollToBottom();
+            return id;
+        }
+
+        function appendAiMessage(markdownText) {
+            const container = document.getElementById('chatContainer');
+            const parsedContent = marked.parse(markdownText);
+            const msgId = 'msg-' + Date.now();
+
+            const aiHtml = `
+                <div class="flex gap-3 max-w-3xl">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-salmon-500 to-orange-400 flex items-center justify-center text-white text-sm shrink-0 shadow-sm">
+                        <i class="fa-solid fa-fish"></i>
+                    </div>
+                    <div class="space-y-1 flex-1 min-w-0">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-xs text-slate-700">พี่แซลม่อน AI</span>
+                            <button onclick="copyMsgText(this)" class="text-[11px] text-slate-400 hover:text-salmon-600 transition flex items-center gap-1">
+                                <i class="fa-regular fa-copy"></i> คัดลอก
+                            </button>
+                        </div>
+                        <div id="${msgId}" class="bg-white border border-slate-200 text-slate-800 p-4 rounded-2xl rounded-tl-none shadow-sm prose text-xs leading-relaxed overflow-x-auto">
+                            ${parsedContent}
+                        </div>
+                        
+                        <div id="plannerTrigger-${msgId}" class="hidden pt-1">
+                            <button onclick="launchVisualPlannerFromMsg('${msgId}')" class="px-3.5 py-2 bg-gradient-to-r from-salmon-500 to-orange-500 hover:from-salmon-600 hover:to-orange-600 text-white font-semibold rounded-xl text-xs shadow-md shadow-salmon-500/15 flex items-center gap-2 transition">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                <span>🎨 ดูตารางรูปแบบ Visual Planner Card & ดาวน์โหลดภาพ</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', aiHtml);
+
+            const insertedEl = document.getElementById(msgId);
+            if (insertedEl && insertedEl.querySelector('table')) {
+                document.getElementById(`plannerTrigger-${msgId}`)?.classList.remove('hidden');
+            }
+
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('chatContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function copyMsgText(btn) {
+            const msgContainer = btn.closest('.space-y-1').querySelector('.prose');
+            if (msgContainer) {
+                const text = msgContainer.innerText;
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = text;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempTextArea);
+
+                btn.innerHTML = `<i class="fa-solid fa-check text-emerald-500"></i> ${i18nDict[currentLanguage]?.copied || 'คัดลอกแล้ว!'}`;
+                setTimeout(() => {
+                    btn.innerHTML = `<i class="fa-regular fa-copy"></i> ${i18nDict[currentLanguage]?.copy || 'คัดลอก'}`;
+                }, 2000);
+            }
+        }
+
+        function handleImageSelected(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64 = e.target.result.split(',')[1];
+                attachedImageBase64 = base64;
+                document.getElementById('imagePreviewThumb').src = e.target.result;
+                document.getElementById('imagePreviewContainer').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImageAttachment() {
+            attachedImageBase64 = null;
+            document.getElementById('imagePreviewContainer').classList.add('hidden');
+            document.getElementById('imageInput').value = '';
+        }
+
+        function openQuickPlannerModal() {
+            document.getElementById('quickPlannerModal').classList.remove('hidden');
+        }
+
+        function closeQuickPlannerModal() {
+            document.getElementById('quickPlannerModal').classList.add('hidden');
+        }
+
+        const facultyCoursePresets = {
+            eng: "01204111 คอมพิวเตอร์โปรแกรมมิ่ง, 01417111 แคลคูลัส I, 01420111 ฟิสิกส์ทั่วไป I",
+            sci: "01403111 เคมีทั่วไป, 01424111 ชีววิทยาชีวเคมี, 01417111 แคลคูลัส I",
+            bus: "01132111 หลักการจัดการ, 01131111 การบัญชีการเงิน, 01119111 เศรษฐศาสตร์เบื้องต้น",
+            econ: "01119111 เศรษฐศาสตร์จุลภาค I, 01119112 เศรษฐศาสตร์มหภาค I, 01417111 แคลคูลัส",
+            hum: "01355111 ภาษาอังกฤษเพื่อการสื่อสาร, 01371111 ความรู้เบื้องต้นเกี่ยวกับสื่อมวลชน",
+            soc: "01451111 จิตวิทยาเพื่อการดำเนินชีวิต, 01454111 รัฐศาสตร์เบื้องต้น",
+            med: "01250111 กายวิภาคศาสตร์สัตวแพทย์ / มนุษย์, 01251111 สรีรวิทยาพื้นฐาน"
+        };
+
+        function loadFacultyCoursePresets(val) {
+            if (facultyCoursePresets[val]) {
+                document.getElementById('modalSubjects').value = facultyCoursePresets[val];
+            }
+        }
+
+        function insertPresetCourses() {
+            const facultyVal = document.getElementById('modalFacultySelect').value;
+            document.getElementById('modalSubjects').value = facultyCoursePresets[facultyVal] || facultyCoursePresets['eng'];
+        }
+
+        function quickLoadFacultyPreset(facultyVal) {
+            if (!facultyVal) return;
+            const selectEl = document.getElementById('sidebarFacultySelect');
+            const facultyName = selectEl.options[selectEl.selectedIndex].text;
+            
+            // Update header badge text with selected faculty
+            const badgeEl = document.getElementById('selectedFacultyBadge');
+            if (badgeEl) {
+                badgeEl.innerHTML = `<span>คณะ: ${facultyName}</span>`;
+            }
+
+            const courses = facultyCoursePresets[facultyVal] || "รายวิชาประจำคณะ";
+            sendQuickPrompt(`ฉันเป็นนิสิตคณะ ${facultyName} มีสอบวิชา: ${courses} ช่วยจัดตารางสอบตามความเป็นจริงให้หน่อยครับ`);
+            document.getElementById('sidebarFacultySelect').value = '';
+        }
+
+        function submitQuickPlanner() {
+            const faculty = document.getElementById('modalFacultySelect').value;
+            const subjects = document.getElementById('modalSubjects').value || 'วิชาทั่วไป';
+            const dates = document.getElementById('modalExamDates').value || 'วันที่ 5-7 นี้';
+            const studyHours = document.getElementById('modalStudyHours').value;
+            const sleep = document.getElementById('modalSleepTime').value;
+            const wake = document.getElementById('modalWakeTime').value;
+            const classHours = document.getElementById('modalClassHours').value;
+
+            closeQuickPlannerModal();
+
+            const promptText = `
+ช่วยจัดตารางสอบอัจฉริยะตามความเป็นจริงให้ทีครับ:
+- คณะ/สาขา: ${faculty}
+- วิชาที่จะสอบ: ${subjects}
+- ช่วงสอบ: ${dates}
+- เป้าหมายเวลาอ่าน: ${studyHours}
+- เวลานอน: ${sleep} น., ตื่นนอน: ${wake} น.
+- ช่วงติดเรียน/งาน: ${classHours} น.
+
+ขอตารางแบบ Markdown Table ที่สมดุล ไม่หักโหม พร้อมคำนวณเวลาพักทานข้าวและพักสมองให้อัตโนมัติด้วยครับ!
+`;
+            sendQuickPrompt(promptText);
+        }
+
+        function sendQuickPrompt(promptText) {
+            document.getElementById('userInput').value = promptText;
+            sendMessage();
+            if (window.innerWidth < 768) {
+                toggleSidebar();
+            }
+        }
+
+        // Enhanced Clean Planner Card Generator Logic
+        function launchVisualPlannerFromMsg(msgId) {
+            const msgEl = document.getElementById(msgId);
+            if (!msgEl) return;
+            const table = msgEl.querySelector('table');
+            if (!table) return;
+
+            // Clone raw table and transform to clean visual design
+            const tableClone = table.cloneNode(true);
+            tableClone.classList.add('w-full', 'border-collapse', 'text-left');
+
+            // Process text inside cells to highlight study vs break routines automatically
+            const cells = tableClone.querySelectorAll('td');
+            cells.forEach(cell => {
+                let html = cell.innerHTML;
+                
+                // Highlight Focus/Study Time Keywords
+                html = html.replace(/(อ่าน|ทบทวน|ทำโจทย์|ติว|Focus|Study|Anki|Flashcard|เก็งข้อสอบ)/gi, function(match) {
+                    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium text-[11px] bg-salmon-50 text-salmon-700 border border-salmon-200/70"><span class="w-1.5 h-1.5 rounded-full bg-salmon-500"></span>${match}</span>`;
+                });
+
+                // Highlight Break/Relax Time Keywords
+                html = html.replace(/(พัก|พักสายตา|พักผ่อน|Break|Rest|ทานข้าว|มื้อเย็น|มื้อเที่ยง|มื้อเช้า|ออกกำลังกาย)/gi, function(match) {
+                    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200/70"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>${match}</span>`;
+                });
+
+                cell.innerHTML = html;
+            });
+
+            const renderArea = document.getElementById('plannerTableRenderArea');
+            renderArea.innerHTML = '';
+            renderArea.appendChild(tableClone);
+
+            document.getElementById('timetableModal').classList.remove('hidden');
+        }
+
+        function closeTimetableModal() {
+            document.getElementById('timetableModal').classList.add('hidden');
+        }
+
+        // High Resolution Clean Image Export
+        function downloadPlannerAsPNG() {
+            const target = document.getElementById('printablePlanner');
+            
+            // Render at 3x scale for crisp mobile readability
+            html2canvas(target, {
+                scale: 3,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Salmon-AI-Exam-Planner-${new Date().toISOString().slice(0,10)}.png`;
+                link.href = canvas.toDataURL('image/png', 1.0);
+                link.click();
+            });
+        }
+
+        function exportPlannerToICS() {
+            const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Salmon AI Companion//Exam Planner//TH
+BEGIN:VEVENT
+SUMMARY:อ่านหนังสือเตรียมสอบ - พี่แซลม่อน AI
+DESCRIPTION:ทบทวนเนื้อหาสอบตามตารางความจริง
+DTSTART:20261005T090000Z
+DTEND:20261005T110000Z
+END:VEVENT
+END:VCALENDAR`;
+            
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'Salmon-Exam-Schedule.ics';
+            link.click();
+        }
+
+        function openExternalHubModal() {
+            document.getElementById('externalHubModal').classList.remove('hidden');
+        }
+
+        function closeExternalHubModal() {
+            document.getElementById('externalHubModal').classList.add('hidden');
+        }
+
+        function processHubImport() {
+            const text = document.getElementById('hubImportText').value.trim();
+            if (!text) return;
+            closeExternalHubModal();
+            sendQuickPrompt(`นำเข้าข้อมูลจาก AI ภายนอก:\n${text}\n\nช่วยนำข้อมูลนี้มาปรับปรุงและสร้างตารางสอบอัจฉริยะของพี่แซลม่อนให้หน่อยครับ`);
+            document.getElementById('hubImportText').value = '';
+        }
+
+        function handleHubImageOCR(event) {
+            handleImageSelected(event);
+            closeExternalHubModal();
+            sendQuickPrompt('ช่วยอ่านตารางสอบ/ตารางเรียนจากรูปภาพนี้ แล้วสร้างเป็นตารางสอบอัจฉริยะให้ทีครับ');
+        }
+
+        function openShareModal() {
+            let currentUrl = window.location.href;
+            const isSandbox = currentUrl.startsWith('about:') || currentUrl.startsWith('blob:') || currentUrl.includes('usercontent') || currentUrl.startsWith('file:');
+            
+            const sandboxNotice = document.getElementById('sandboxNotice');
+            if (isSandbox) {
+                if (sandboxNotice) sandboxNotice.classList.remove('hidden');
+                // Standard readable default URL when running in sandbox or blob mode
+                if (currentUrl.startsWith('about:') || currentUrl.startsWith('blob:')) {
+                    currentUrl = 'https://salmon-ai-planner.web.app';
+                }
+            } else if (sandboxNotice) {
+                sandboxNotice.classList.add('hidden');
+            }
+
+            const urlInput = document.getElementById('shareUrlInput');
+            if (urlInput) {
+                urlInput.value = currentUrl;
+            }
+
+            updateQrCode(currentUrl);
+
+            if (navigator.share && !isSandbox) {
+                document.getElementById('nativeShareContainer')?.classList.remove('hidden');
+            } else {
+                document.getElementById('nativeShareContainer')?.classList.add('hidden');
+            }
+
+            document.getElementById('shareModal').classList.remove('hidden');
+        }
+
+        function handleShareUrlInput() {
+            const urlInput = document.getElementById('shareUrlInput');
+            if (urlInput) {
+                updateQrCode(urlInput.value.trim());
+            }
+        }
+
+        function updateQrCode(url) {
+            const qrImage = document.getElementById('shareQrImage');
+            if (!url) return;
+
+            try {
+                // Generate QR Code using client-side JS library (qrcode-generator)
+                if (typeof qrcode !== 'undefined') {
+                    const qr = qrcode(0, 'M');
+                    qr.addData(url);
+                    qr.make();
+                    const qrDataUrl = qr.createDataURL(6, 0);
+                    if (qrImage) qrImage.src = qrDataUrl;
+                } else {
+                    // Fallback to QR API if JS library is pending load
+                    if (qrImage) {
+                        qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`;
+                    }
+                }
+            } catch (e) {
+                console.warn('Local QR generation fallback to API:', e);
+                if (qrImage) {
+                    qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`;
+                }
+            }
+        }
+
+        function downloadQrCode() {
+            const qrImage = document.getElementById('shareQrImage');
+            if (!qrImage || !qrImage.src) return;
+
+            const link = document.createElement('a');
+            link.download = `Salmon-AI-QRCode.png`;
+            link.href = qrImage.src;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').classList.add('hidden');
+        }
+
+        function copyShareUrl() {
+            const urlInput = document.getElementById('shareUrlInput');
+            if (urlInput) {
+                const textToCopy = urlInput.value.trim();
+                
+                // Native Clipboard API with fallback
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(textToCopy);
+                } else {
+                    urlInput.select();
+                    document.execCommand('copy');
+                }
+
+                const btn = document.getElementById('copyShareBtn');
+                if (btn) {
+                    btn.innerHTML = `<i class="fa-solid fa-check text-white"></i> <span>คัดลอกแล้ว!</span>`;
+                    setTimeout(() => {
+                        btn.innerHTML = `<i class="fa-regular fa-copy"></i> <span>คัดลอก</span>`;
+                    }, 2000);
+                }
+            }
+        }
+
+        function triggerNativeShare() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'แซลม่อน AI - ระบบวางแผนสอบอัจฉริยะ',
+                    text: 'วางแผนเตรียมสอบอัจฉริยะ จัดตารางเรียนและเวลานอนตามชีวิตจริง!',
+                    url: document.getElementById('shareUrlInput')?.value || window.location.href
+                }).catch(() => {});
+            }
+        }
+
+        window.onload = function() {
+            console.log("Salmon AI Companion App Loaded Successfully!");
+        };
+    </script>
+</body>
+</html>
